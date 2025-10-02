@@ -1,0 +1,192 @@
+<!doctype html>
+<html lang="en">
+
+<head>
+    <meta charset="utf-8">
+    <meta http-equiv="Content-Type" content="text/html;charset=UTF-8">
+    <link rel="stylesheet" href="./css/bootstrap/css/bootstrap.min.css" type="text/css">
+    <script src="./js/jquery.js"></script>
+    <script src="./js/bootstrap.min.js"></script>
+    <script type="text/javascript" src="../websocket api/md5.min.js"></script>
+    <script type="text/javascript" src="../websocket api/reconnecting-websocket.js"></script>
+    <script type="text/javascript" src="../websocket api/localsense_websocket_api.js"></script>
+    <script type="text/javascript" src="index.js"></script>
+    <script type="text/javascript" src="./js/jquery.SuperSlide.js"></script>
+    <link rel="stylesheet" href="./css/tab-style.css" type="text/css">
+    <title>test ws</title>
+    <style>
+        .textarea_show {
+            height: 100%;
+            width: 49%;
+        }
+        
+        .legend_show {
+            display: block;
+            width: inherit;
+            padding: 0;
+            margin-bottom: 0px;
+            font-size: 16px;
+            line-height: inherit;
+            color: #333;
+            border: 0;
+        }
+        
+        .fieldset_show {
+            margin-top: 10px;
+            padding: .04em .625em .75em;
+            border: 1px solid silver;
+        }
+        
+        .label_title {
+            float: left;
+            margin-right: 8px;
+            line-height: 33px;
+            font-size: 18px;
+        }
+        
+        .host_port {
+            width: 220px;
+            float: left;
+            margin-right: 8px;
+            font-size: 18px;
+        }
+        
+        .container {
+            width: 98%;
+        }
+        
+        .btns {
+            margin-top: 10px;
+        }
+        
+        .sp {
+            color: red;
+        }
+        
+        .btn {
+            width: 90px;
+            height: 30px;
+            font-size: 12px;
+            line-height: 30px;
+            padding: 0px;
+        }
+        
+        .tip {
+            font-size: 15px;
+        }
+    </style>
+</head>
+
+<body>
+    <div id="title" style="text-align: center;height:50px;line-height:50px; border-bottom: 1px solid #eee; margin-bottom: 4px; font-size: 25px;">
+        BlueIOT Websocket Interface Debugging Tool V2.3.3
+    </div>
+    <div class="container">
+        <div style="margin:10px 0;height: 30px;">
+           
+            <label for="serverip" class="label_title">Server Address</label>
+            <input type="text" class="form-control host_port" placeholder="Server IP" value="localhost:48300" id="serverip">
+            <label for="serverip" class="label_title">Account</label>
+            <input type="text" class="form-control host_port" placeholder="Account" value="admin" id="username">
+            <label for="serverip" class="label_title">Password</label>
+            <input type="text" class="form-control host_port" placeholder="Password" value="" id="password">
+            <label for="protocol" class="label_title">Protocol</label>
+            <select id="protocol" style="width: 120px;">
+                <option value="ws" selected="selected">ws</option>
+                <option value="wss">wss</option>
+            </select>
+            
+            <button class="btn btn-primary" id="connetbtn" type="button" onclick="ToggleBasicClicked()">Connect</button>
+            <button class="btn btn-primary" type="button" onclick="CloseWebsocket()">Disconnect</button>
+            <button class="btn btn-primary" type="button" onclick="ClearShowInfo()" style="width: 115px;">Clear Screen</button>
+            <button class="btn btn-primary" id="export_btn" type="button" onclick="dataToTxt()" style="display: none">Export</button>
+        </div>
+        <form style="margin:10px 0;" class="form-inline" role="form">
+            <input type="text" style="width: 195px;" class="form-control" placeholder="Data Subscription Filtering" id="Rss_content">
+            <button class="btn btn-primary" type="button" onclick="RssTagClicked()" id="ConnectBtn">By Tag</button>
+            <button class="btn btn-primary" type="button" onclick="RssGroupClicked()" id="CloseBtn">By Group</button>
+            <button class="btn btn-primary" type="button" onclick="RssMapClicked()" id="ClearBtn">By Layer</button>
+            <button class="btn btn-primary" type="button" onclick="NoFiliter()" id="ClearBtn">No Filtering</button>
+            <span class="tip" style="display:inline-block;">Multiple conditions separated by ":". Click the "No Filtering" button to restore the initial subscription status without any filtering.</span>
+        </form>
+
+        <form>
+            <span style="font-weight: 700; font-size: 18px;">Position data output mode：</span>
+            <select id="posOutPutOption">
+                <option value="XY" selected="selected">Output only relative coordinates (default)</option>
+				<option value="GEO">Output only latitude and longitude coordinates</option>
+                <option value="GLOBAL">Output only global coordinates</option>
+                <option value="XY_GEO">Output both relative coordinates and latitude and longitude coordinates </option>
+                <option value="XY_GLOBAL">Output both relative and global coordinates </option>
+            </select>
+        </form>
+
+        <fieldset class='fieldset_show'>
+            <legend class='legend_show'>Tag Related Commands</legend>
+            <span>Tag ID</span>
+            <select id="filter_tag" style="min-width:100px" onchange="FilterTag()">
+                <option value="" selected></option>
+            </select>
+            <button class="btn btn-primary" type="button" onclick="VideoOpenBtnClick()">Video Linkage</button>
+            <button class="btn btn-primary" type="button" onclick="VideoCloseBtnClick()">Disable Video</button>
+            <button class="btn btn-primary" type="button" onclick="TagShakeBuzzBtnClick()">Tag Vib & Buz</button>
+        </fieldset>
+        <div class="tabox">
+            <div class="hd">
+                <ul>
+                    <li class="on common_li">Command</li>
+                </ul>
+            </div>
+            <div class="bd">
+                <textarea style="float: left; width: 100%; height:80%; resize: none; overflow:auto" id='show_command' class='textarea_show1'></textarea>
+            </div>
+        </div>
+        <div class="tabox tb2">
+            <div class="hd">
+                <ul>
+                    <li class="on common_li">Real-time Location Data</li>
+                    
+                    <li class="on common_li">Real-time Alarm Data</li>
+                    <li class="on common_li">Battery Info</li>
+                    <li class="on common_li">Tag Extension Data</li>
+                    <li class="on common_li">Regional Statistics</li>
+                    <li class="on common_li">Anchor Data</li>
+                    <li class="on common_li">Online Tag</li>
+                    <li class="on common_li">Regional Out/In Notification</li>
+             
+                  
+                    <li class="on common_li">Video Linkage</li>
+                    <li class="on common_li">Tags customize iot data</li>
+                    <li class="on common_li">Sign Data</li>
+                   
+                </ul>
+            </div>
+            <div class="bd">
+                <textarea style="float: left; width: 100%; height:80%; resize: none; overflow:auto" id='show_tag_pos' class='textarea_show'></textarea>
+                <textarea style="float: left; width: 100%; height:80%; resize: none; overflow:auto" id='show_gao_jing' class='textarea_show'></textarea>
+                <textarea style="float: left; width: 100%; height:80%; resize: none; overflow:auto" id='show_tag_power' class='textarea_show'></textarea>
+                <textarea style="float: left; width: 100%; height:80%; resize: none; overflow:auto" id='show_heart_info' class='textarea_show'></textarea>
+                <textarea style="float: left; width: 100%; height:80%; resize: none; overflow:auto" id='show_dm_data' class='textarea_show'></textarea>
+           
+                <textarea style="float: left; width: 100%; height:80%; resize: none; overflow:auto" id='show_base_state' class='textarea_show'></textarea>
+                <textarea style="float: left; width: 100%; height:80%; resize: none; overflow:auto" id='show_person_info' class='textarea_show'></textarea>
+
+                <textarea style="float: left; width: 100%; height:80%; resize: none; overflow:auto" id='show_area_info' class='textarea_show'></textarea>
+                <!-- <textarea style="float: left; width: 100%; height:80%; resize: none; overflow:auto" id='show_modfiy_data' class='textarea_show'></textarea> -->  
+                <!-- <textarea style="float: left; width: 100%; height:80%; resize: none; overflow:auto" id='show_heart_study_info' class='textarea_show'></textarea> -->
+               
+                <textarea style="float: left; width: 100%; height:80%; resize: none; overflow:auto" id='show_video_state' class='textarea_show'></textarea>
+                <textarea style="float: left; width: 100%; height:80%; resize: none; overflow:auto" id='show_tag_iot' class='textarea_show'></textarea>
+                <textarea style="float: left; width: 100%; height:80%; resize: none; overflow:auto" id='show_sign_info' class='textarea_show'></textarea>
+                
+            </div>
+        </div>
+    </div>
+    <script type="text/javascript">
+        jQuery(".tabox").slide({
+            delayTime: 0
+        });
+    </script>
+</body>
+
+</html>
